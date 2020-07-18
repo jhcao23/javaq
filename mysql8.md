@@ -130,7 +130,8 @@
         - INDEX
         - VIEW   
 026.    How many types of TRIGGERS are allowed in MySql table?
-        - 6: `BEFORE|AFTER` `INSERT|DELETE|UPDATE`             
+        - 6: `BEFORE|AFTER` `INSERT|DELETE|UPDATE` 
+                    
 050.    how to list all the indexes of a table?
         -   `show index from table_name;`                                                                    
         
