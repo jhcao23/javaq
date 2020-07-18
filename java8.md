@@ -1,2 +1,2 @@
-# Core Java 8 Questions
+# Core Java 8 note
 
