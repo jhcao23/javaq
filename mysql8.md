@@ -51,9 +51,9 @@
         `CHAR` | `VARCHAR`        
         ---    | ---        
         fixed length | variable length
-        max is 255 | max is 4000
+        max is 255 | max is 65535
         faster | slower
-        static memory allocation | dynamic mem allo
+        static memory allocation | dynamic mem allocation
 012.    compare heap table and temporary table?  
         
         `heap` | `temporary` table
@@ -81,7 +81,13 @@
         - so `SELECT NULL = NULL` returns 1.
 016.    how to find the MySQL RDBMS version?
         - `SELECT VERSION();`
-017.    compare `ENUM` vs `SET`?     
+017.    compare `ENUM` vs `SET`?
+        `ENUM` | `SET`
+        ---    | ---
+        1 of them | 1+ of the values
+        can be `''` or `NULL` | 
+        cannot be an expression | ?
+         | query can use `FIND_IN_SET` and `LIKE`     
 018.    talk about basic data types?
         + `numeric`: 
             - `bit`: `Bit`
@@ -131,10 +137,150 @@
         - VIEW   
 026.    How many types of TRIGGERS are allowed in MySql table?
         - 6: `BEFORE|AFTER` `INSERT|DELETE|UPDATE` 
-                    
+027.    talk about `TRUNCATE` with comparing with `DELETE` and `DROP`?
+        - `TRUNCATE TABLE` empties a table completely
+        - high performance
+        - It requires the `DROP privilege`. 
+        - Logically, `TRUNCATE TABLE` is similar to a `DELETE` statement that deletes all rows, or a sequence of `DROP TABLE` and `CREATE TABLE` statements.
+        - it is classified as a **DDL** statement rather than a DML statement
+        - `TRUNCATE TABLE` bypasses the DML method of deleting data
+        - it does not cause `ON DELETE` **triggers** to fire
+        - it cannot be performed for _InnoDB_ tables with parent-child **foreign key** relationships
+        - it cannot be `rolled back` like a DML operation
+                       
 050.    how to list all the indexes of a table?
-        -   `show index from table_name;`                                                                    
-        
+        -   `show index from table_name;`  
+051.    Write a query to fetch **duplicate** records from a table using MySQL?
+        ```sql
+            SELECT EmpId
+            FROM EmployeeSalary 
+            GROUP BY EmpId
+            HAVING COUNT(*) > 1;
+        ```    
+052.    what are the basic methodology to optimize query?
+        - avoid `sp_` when creating stored procedure
+        - avoid `select *`
+        - avoid `%` wildcard
+        - use alias for table name
+        - use `DISTINCT` smartly esp when with `UNION` - better used solely  
+        - use `subquery` smartly
+        - take best advantages of `index` and `explain analyze` execution plan.
+053.    how to `create trigger`?
+        - `create trigger` syntax:
+            ```sql
+                CREATE
+                    [DEFINER = user]
+                    TRIGGER trigger_name
+                    trigger_time trigger_event
+                    ON tbl_name FOR EACH ROW
+                    [trigger_order]
+                    trigger_body
+                
+                trigger_time: { BEFORE | AFTER }
+                
+                trigger_event: { INSERT | UPDATE | DELETE }
+                
+                trigger_order: { FOLLOWS | PRECEDES } other_trigger_name
+            ```        
+        - create examples:
+            + `CREATE TABLE account (acct_num INT, amount DECIMAL(10,2));`
+            + `CREATE TRIGGER ins_sum BEFORE INSERT ON account FOR EACH ROW SET @sum = @sum + NEW.amount;`
+            + `sql CREATE TRIGGER ins_transaction BEFORE INSERT ON account
+                      FOR EACH ROW PRECEDES ins_sum
+                      SET
+                      @deposits = @deposits + IF(NEW.amount>0,NEW.amount,0),
+                      @withdrawals = @withdrawals + IF(NEW.amount<0,-NEW.amount,0);
+              `
+            + `mysql> delimiter //
+               mysql> CREATE TRIGGER upd_check BEFORE UPDATE ON account
+                      FOR EACH ROW
+                      BEGIN
+                          IF NEW.amount < 0 THEN
+                              SET NEW.amount = 0;
+                          ELSEIF NEW.amount > 100 THEN
+                              SET NEW.amount = 100;
+                          END IF;
+                      END;//
+               mysql> delimiter ;
+              `
+            + `CREATE TRIGGER testref BEFORE INSERT ON test1
+                 FOR EACH ROW
+                 BEGIN
+                   INSERT INTO test2 SET a2 = NEW.a1;
+                   DELETE FROM test3 WHERE a3 = NEW.a1;
+                   UPDATE test4 SET b4 = b4 + 1 WHERE a4 = NEW.a1;
+                 END;
+              `
+        - In an `INSERT` trigger, only `NEW.col_name` can be used; there is **no old row**.
+        - In a `DELETE` trigger, only `OLD.col_name` can be used; there is **no new row**.
+        - In an `UPDATE` trigger, you can use `OLD.col_name` to refer to the columns of a row _before_ it is updated and `NEW.col_name` to refer to the columns of the row _after_ it is updated.
+054.    how to `drop trigger`?        
+        - `drop trigger` syntax:
+            ```sql
+              DROP TRIGGER [IF EXISTS] [schema_name.]trigger_name
+            ```
+        - drop example: `DROP TRIGGER test.ins_sum;`
+055.    how to find the Nth record?
+        - use `limit N-1, 1`
+056.    how to convert a string to utf8?
+        - `SELECT CONVERT('abc' USING utf8);` 
+        - to list all the char set use `SHOW CHARACTER SET;` or `SELECT * FROM INFORMATION_SCHEMA.CHARACTER_SETS;`
+057.    how to `create index`?
+        - syntax:
+        ```sql
+            CREATE [UNIQUE | FULLTEXT | SPATIAL] INDEX index_name
+                [index_type]
+                ON tbl_name (key_part,...)
+                [index_option]
+                [algorithm_option | lock_option] ...
+            
+            key_part: {col_name [(length)] | (expr)} [ASC | DESC]
+            
+            index_option: {
+                KEY_BLOCK_SIZE [=] value
+              | index_type
+              | WITH PARSER parser_name
+              | COMMENT 'string'
+              | {VISIBLE | INVISIBLE}
+              | ENGINE_ATTRIBUTE [=] 'string'
+              | SECONDARY_ENGINE_ATTRIBUTE [=] 'string'
+            }
+            
+            index_type:
+                USING {BTREE | HASH}
+            
+            algorithm_option:
+                ALGORITHM [=] {DEFAULT | INPLACE | COPY}
+            
+            lock_option:
+                LOCK [=] {DEFAULT | NONE | SHARED | EXCLUSIVE}
+        ```
+        - example:
+            + `CREATE INDEX part_of_name ON customer (name(10));`
+            + `CREATE INDEX idx2 ON t1 ((col1 + col2), (col1 - col2), col1);`
+            + `ALTER TABLE t1 ADD INDEX ((col1 * 40) DESC);`
+            + `CREATE TABLE t1 (col1 INT, col2 INT, INDEX func_index ((ABS(col1))));`
+            + `ALTER TABLE employees ADD INDEX idx (generated_col);`
+            + `ALTER TABLE customers ADD INDEX zips( (CAST(custinfo->'$.zip' AS UNSIGNED ARRAY)) );`
+            + `CREATE INDEX zips ON customers ( (CAST(custinfo->'$.zip' AS UNSIGNED ARRAY)) );`                                                                                                     
+058.    list all mysql 8 **aggregate** functions?
+        + basic: 
+            - `AVG, MAX, MIN, SUM([DISTINCT] expr) [over_clause]`
+            - `COUNT(expr) [over_clause]`, `COUNT(DISTINCT expr,[expr...])`
+            - `BIT_AND, BIT_OR, BIT_XOR(expr) [over_clause]`
+        + grouping:
+            - `GROUP_CONCAT(expr)`
+            - `JSON_ARRAYAGG(col_or_expr) [over_clause]`
+            - `JSON_OBJECTAGG(key, value) [over_clause]` 
+            - `GROUPING(expr [, expr] ...)` only within `select` or `having` clause - a _miscellaneous function_ actually  
+        + stats:
+            - `STD(expr) [over_clause]`
+            - `STDDEV(expr) [over_clause]`
+            - `STDDEV_POP(expr) [over_clause]`
+            - `STDDEV_SAMP(expr) [over_clause]`
+            - `VAR_POP(expr) [over_clause]`
+            - `VAR_SAMP(expr) [over_clause]`
+            - `VARIANCE(expr) [over_clause]`
         
          
                
