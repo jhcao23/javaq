@@ -61,7 +61,7 @@
         a storage engine in MEMORY | keep transient data
         `SET max_heap_table_size = 1024*1024; CREATE TABLE t1 (id INT, UNIQUE(id)) ENGINE = MEMORY;` | `create temporary table` with new `privilege`.
         use for high speed | use for temporarily
-        no `BLOB|TEXT` | allow
+        no `BLOB or TEXT` | allow
         no support for `AUTO_INCREMENT` | support
         Indexes should be NOT NULL | allow no-index 
         deleted when server is shutdown | deleted when client session is closed
