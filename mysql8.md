@@ -283,6 +283,75 @@
             - `VAR_POP(expr) [over_clause]`
             - `VAR_SAMP(expr) [over_clause]`
             - `VARIANCE(expr) [over_clause]`
+059.    how to `create procedure`?
+        + the syntax:
+            ```sql
+                CREATE
+                    [DEFINER = user]
+                    PROCEDURE sp_name ([ [ IN | OUT | INOUT ] param_name type [,...] ])
+                    [characteristic ...] routine_body
+            
+                characteristic: {
+                    COMMENT 'string'
+                  | LANGUAGE SQL
+                  | [NOT] DETERMINISTIC
+                  | { CONTAINS SQL | NO SQL | READS SQL DATA | MODIFIES SQL DATA }
+                  | SQL SECURITY { DEFINER | INVOKER }
+                }
+            ```     
+        + example:
+            ```sql
+                delimiter //
+                CREATE PROCEDURE citycount (IN country CHAR(3), OUT cities INT)
+                     BEGIN
+                       SELECT COUNT(*) INTO cities FROM world.city
+                       WHERE CountryCode = country;
+                     END//
+                delimiter ;
+                
+                CALL citycount('JPN', @cities);
+                
+                SELECT @cities;
+                CALL citycount('FRA', @cities);
+                SELECT @cities;
+          
+                CREATE DEFINER = 'admin'@'localhost' PROCEDURE account_count()
+                BEGIN
+                  SELECT 'Number of accounts:', COUNT(*) FROM mysql.user;
+                END;
+          
+                CREATE DEFINER = 'admin'@'localhost' PROCEDURE account_count()
+                SQL SECURITY INVOKER
+                BEGIN
+                  SELECT 'Number of accounts:', COUNT(*) FROM mysql.user;
+                END;                 
+            ```    
+060.    how to `create function`?
+        - syntax:
+            ```sql
+                CREATE
+                    [DEFINER = user]
+                    FUNCTION sp_name ([param_name type[,...]])
+                    RETURNS type
+                    [characteristic ...] routine_body
+                characteristic: {
+                    COMMENT 'string'
+                  | LANGUAGE SQL
+                  | [NOT] DETERMINISTIC
+                  | { CONTAINS SQL | NO SQL | READS SQL DATA | MODIFIES SQL DATA }
+                  | SQL SECURITY { DEFINER | INVOKER }
+                }
+            ```   
+        - example:
+            ```sql
+              CREATE FUNCTION hello (s CHAR(20))
+              RETURNS CHAR(50) DETERMINISTIC
+                  RETURN CONCAT('Hello, ',s,'!');
+          
+              SELECT hello('world');
+          
+          
+            ```       
         
          
                
