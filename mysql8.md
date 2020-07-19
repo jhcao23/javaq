@@ -147,6 +147,8 @@
         - it does not cause `ON DELETE` **triggers** to fire
         - it cannot be performed for _InnoDB_ tables with parent-child **foreign key** relationships
         - it cannot be `rolled back` like a DML operation
+028.    how to load a large `CSV` file to database?  
+        - `LOAD DATA LOCAL INFILE "file_name" INTO TABLE table_name FIELDS TERMINATED by ',' LINES TERMINATED BY '\n'`        
                        
 050.    how to list all the indexes of a table?
         -   `show index from table_name;`  
